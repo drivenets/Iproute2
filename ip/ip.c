@@ -15,6 +15,7 @@
 #include <errno.h>
 
 #include "version.h"
+#include "git_hash.h"
 #include "utils.h"
 #include "ip_common.h"
 #include "namespace.h"
@@ -250,6 +251,7 @@ int main(int argc, char **argv)
 			libbpf_version = get_libbpf_version();
 			if (libbpf_version)
 				printf(", libbpf %s", libbpf_version);
+			printf(", dn-%s", GIT_LONG_HASH);
 			printf("\n");
 			exit(0);
 		} else if (matches(opt, "-force") == 0) {

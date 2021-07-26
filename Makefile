@@ -77,12 +77,12 @@ endif
 LIBNETLINK=../lib/libutil.a ../lib/libnetlink.a
 LDLIBS += $(LIBNETLINK)
 
-all: config.mk
+all: clean git_hash config.mk
 	@set -e; \
 	for i in $(SUBDIRS); \
 	do echo; echo $$i; $(MAKE) -C $$i; done
 
-.PHONY: clean clobber distclean check cscope version
+.PHONY: clean clobber distclean check cscope version git_hash
 
 help:
 	@echo "Make Targets:"
@@ -93,6 +93,7 @@ help:
 	@echo " check               - run tests"
 	@echo " cscope              - build cscope database"
 	@echo " version             - update version"
+	@echo " git_hash            - update git_hash"
 	@echo ""
 	@echo "Make Arguments:"
 	@echo " V=[0|1]             - set build verbosity level"
@@ -116,6 +117,10 @@ install: all
 version:
 	echo "static const char version[] = \""`git describe --tags --long`"\";" \
 		> include/version.h
+
+git_hash:
+	echo "static const char GIT_LONG_HASH[] = \""`git rev-parse HEAD`"\";" \
+		> include/git_hash.h
 
 clean:
 	@for i in $(SUBDIRS) testsuite; \
