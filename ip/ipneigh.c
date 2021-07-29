@@ -22,6 +22,7 @@
 
 #define NUD_VALID	(NUD_PERMANENT|NUD_NOARP|NUD_REACHABLE|NUD_PROBE|NUD_STALE|NUD_DELAY)
 #define MAX_ROUNDS	10
+#define NO_VRF_FILTER	-10
 
 static struct
 {
@@ -50,7 +51,7 @@ static void usage(void)
 		"                [ protocol PROTO ]\n"
 		"\n"
 		"	ip neigh { show | flush } [ proxy ] [ to PREFIX ] [ dev DEV ] [ nud STATE ]\n"
-		"				  [ vrf NAME ] [ nomaster ]\n"
+		"				  [ vrf NAME ] [ nomaster | novrf ]\n"
 		"	ip neigh get { ADDR | proxy ADDR } dev DEV\n"
 		"\n"
 		"STATE := { delay | failed | incomplete | noarp | none |\n"
@@ -546,6 +547,8 @@ static int do_show_or_flush(int argc, char **argv, int flush)
 			filter.master = ifindex;
 		} else if (strcmp(*argv, "nomaster") == 0) {
 			filter.master = -1;
+		} else if (strcmp(*argv, "novrf") == 0) {
+			filter.master = NO_VRF_FILTER;
 		} else if (strcmp(*argv, "unused") == 0) {
 			filter.unused_only = 1;
 		} else if (strcmp(*argv, "nud") == 0) {
