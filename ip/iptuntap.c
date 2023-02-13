@@ -37,15 +37,15 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: ip tuntap { add | del | show | list | lst | help } [ dev PHYS_DEV ]\n"
-		"       [ mode { tun | tap } ] [ user USER ] [ group GROUP ]\n"
-		"       [ one_queue ] [ pi ] [ vnet_hdr ] [ multi_queue ] [ name NAME ]\n"
+		"	[ mode { tun | tap } ] [ user USER ] [ group GROUP ]\n"
+		"	[ one_queue ] [ pi ] [ vnet_hdr ] [ multi_queue ] [ name NAME ] [ index INDEX ]\n"
 		"\n"
 		"Where: USER  := { STRING | NUMBER }\n"
 		"       GROUP := { STRING | NUMBER }\n");
 	exit(-1);
 }
 
-static int tap_add_ioctl(struct ifreq *ifr, uid_t uid, gid_t gid)
+static int tap_add_ioctl(struct ifreq *ifr, uid_t uid, gid_t gid, int index)
 {
 	int fd;
 	int ret = -1;
@@ -58,6 +58,10 @@ static int tap_add_ioctl(struct ifreq *ifr, uid_t uid, gid_t gid)
 	if (fd < 0) {
 		perror("open");
 		return -1;
+	}
+	if (index && ioctl(fd, TUNSETIFINDEX, &index)) {
+		perror("ioctl(TUNSETIFINDEX)");
+		goto out;
 	}
 	if (ioctl(fd, TUNSETIFF, ifr)) {
 		perror("ioctl(TUNSETIFF)");
@@ -105,7 +109,7 @@ static int tap_del_ioctl(struct ifreq *ifr)
 
 }
 static int parse_args(int argc, char **argv,
-		      struct ifreq *ifr, uid_t *uid, gid_t *gid)
+		      struct ifreq *ifr, uid_t *uid, gid_t *gid, int *index)
 {
 	memset(ifr, 0, sizeof(*ifr));
 
@@ -175,6 +179,13 @@ static int parse_args(int argc, char **argv,
 			NEXT_ARG();
 			if (get_ifname(ifr->ifr_name, *argv))
 				invarg("\"dev\" not a valid ifname", *argv);
+		} else if (index && matches(*argv, "index") == 0) {
+			NEXT_ARG();
+			if (*index)
+				duparg("index", *argv);
+			*index = atoi(*argv);
+			if (*index <= 0)
+				invarg("Invalid \"index\" value", *argv);
 		} else {
 			if (matches(*argv, "name") == 0) {
 				NEXT_ARG();
@@ -202,18 +213,19 @@ static int do_add(int argc, char **argv)
 	struct ifreq ifr;
 	uid_t uid = -1;
 	gid_t gid = -1;
+	int index = 0;
 
-	if (parse_args(argc, argv, &ifr, &uid, &gid) < 0)
+	if (parse_args(argc, argv, &ifr, &uid, &gid, &index) < 0)
 		return -1;
 
-	return tap_add_ioctl(&ifr, uid, gid);
+	return tap_add_ioctl(&ifr, uid, gid, index);
 }
 
 static int do_del(int argc, char **argv)
 {
 	struct ifreq ifr;
 
-	if (parse_args(argc, argv, &ifr, NULL, NULL) < 0)
+	if (parse_args(argc, argv, &ifr, NULL, NULL, NULL) < 0)
 		return -1;
 
 	return tap_del_ioctl(&ifr);
